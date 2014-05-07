@@ -3,14 +3,13 @@
 
 #include <utility>
 #include <vector>
-#include <set>
 
 class Piece
 {
 	public:
 		Piece();
 		Piece(int width, int length, int value, int minimum, int maximum);
-		std::set<std::pair<int, int> > getCutPoints(std::pair<int, int> corner) const;
+		std::vector<std::vector<int> > getCutPoints(int r, int s, int L, int W) const;
 		void setWidth(int width);
 		void setLength(int length);
 		int getWidth() const;
@@ -21,7 +20,8 @@ class Piece
 		int getMaximum() const;
 		int getMinimum() const;
 		int getValue() const;
-		friend bool operator<(const Piece &lhs, const Piece &rhs);
+		friend bool compareWidth(const Piece &lhs, const Piece &rhs);
+		friend bool compareLength(const Piece &lhs, const Piece &rhs);
 
 	private:
 		int width;
@@ -30,5 +30,8 @@ class Piece
 		int minimum;
 		int maximum;
 };
+
+bool compareWidth(const Piece &lhs, const Piece &rhs);
+bool compareLength(const Piece &lhs, const Piece &rhs);
 
 #endif /* STOCK_H */

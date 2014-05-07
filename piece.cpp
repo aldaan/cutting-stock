@@ -16,15 +16,18 @@ Piece::Piece(int width, int length, int value, int minimum, int maximum)
 	this->maximum = maximum;
 }
 
-set<pair<int,int> > Piece::getCutPoints(std::pair<int,int> corner) const
+vector<vector<int> > Piece::getCutPoints(int p, int q, int L, int W) const
 {
-	set<pair<int,int> > points;
+	vector<vector<int> > points(L, vector<int>(W, 0));
 
-	for (int i = get<0>(corner); i < get<0>(corner) + width; ++i)
+	for (int i = p; i < p + length; ++i)
 	{
-		for (int j = get<1>(corner); j < get<1>(corner) + length; ++j)
+		for (int j = q; j < q + width; ++j)
 		{
-			points.insert(pair<int,int>(i, j));
+			if (i < L and j < W)
+			{
+				points.at(i).at(j) = 1;
+			}
 		}
 	}
 
@@ -81,7 +84,12 @@ int Piece::getValue() const
 	return value;
 }
 
-bool operator<(const Piece &lhs, const Piece &rhs)
+bool compareWidth(const Piece &lhs, const Piece &rhs)
 {
 	return lhs.width < rhs.width;
+}
+
+bool compareLength(const Piece &lhs, const Piece &rhs)
+{
+	return lhs.length < rhs.length;
 }
