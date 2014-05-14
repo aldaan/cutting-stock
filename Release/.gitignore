@@ -1,0 +1,6 @@
+*.lp
+*.lp~
+*.o
+cgcut2_modified.txt
+Cutting_stock
+*.d

@@ -7,12 +7,12 @@
 
 using namespace std;
 
-void readInput(Piece& stock, vector<Piece>& patterns, string file);
-void writeOutput(Piece& stock, vector<Piece>& patterns);
+void readInput(Piece& stock, vector<Piece>& patterns, string filename);
+void writeOutput(Piece& stock, vector<Piece>& patterns, string filename);
 void reductionOverlappingPieces(Piece& stock, vector<Piece>& patterns);
 void reductionFreeArea(Piece& stock, vector<Piece>& patterns);
 void generateNormalPatterns(Piece& stock, vector<Piece>& patterns, set<int>& lengths, set<int>& widths);
-void generateLP(Piece& stock, vector<Piece>& patterns, set<int>& lengths, set<int>& widths);
+void generateLP(Piece& stock, vector<Piece>& patterns, set<int>& lengths, set<int>& widths, string filename);
 
 int main(int argc, char* argv[])
 {
@@ -20,30 +20,30 @@ int main(int argc, char* argv[])
 	vector<Piece> patterns;
 	set<int> lengths;
 	set<int> widths;
+	string file;
 
-	readInput(stock, patterns, argv[1]);
+	if(0 == argc)
+	{
+		file = "Stock_input_data";
+	}
+	else
+	{
+		file = argv[1];
+	}
+
+	readInput(stock, patterns, file);
 	reductionOverlappingPieces(stock, patterns);
 	reductionFreeArea(stock, patterns);
-	writeOutput(stock, patterns);
+	writeOutput(stock, patterns, file);
 	generateNormalPatterns(stock, patterns, lengths, widths);
-	generateLP(stock, patterns, lengths, widths);
+	generateLP(stock, patterns, lengths, widths, file);
 
 	return 0;
 }
 
-void readInput(Piece& stock, vector<Piece>& patterns, string file)
+void readInput(Piece& stock, vector<Piece>& patterns, string filename)
 {
-	ifstream input;
-
-	if (not file.empty())
-	{
-		input.open(file);
-	}
-	else
-	{
-		input.open("Stock_input_data.txt");
-	}
-
+	ifstream input(filename + ".txt");
 	int w, l, p, min, max;
 
 	input >> w >> l;
@@ -58,9 +58,9 @@ void readInput(Piece& stock, vector<Piece>& patterns, string file)
 	input.close();
 }
 
-void writeOutput(Piece& stock, vector<Piece>& patterns)
+void writeOutput(Piece& stock, vector<Piece>& patterns, string filename)
 {
-	ofstream output("Stock_output.txt");
+	ofstream output(filename + "_modified.txt");
 
 	for (unsigned int i = 0; i < patterns.size(); ++i)
 	{
@@ -124,8 +124,8 @@ void reductionOverlappingPieces(Piece& stock, vector<Piece>& patterns)
 
 void reductionFreeArea(Piece& stock, vector<Piece>& patterns)
 {
-	int L0 = stock.getLength();
 	int W0 = stock.getWidth();
+	int L0 = stock.getLength();
 	int area = 0;
 
 	for (unsigned int i = 0; i < patterns.size(); ++i)
@@ -155,6 +155,9 @@ void generateNormalPatterns(Piece& stock, vector<Piece>& patterns, set<int>& len
 	Piece minL = *min_element(patterns.begin(), patterns.end(), compareLength);
 	Piece minW = *min_element(patterns.begin(), patterns.end(), compareWidth);
 
+	//vector<vector<int> > usedForLength(L0 - minL.getLength() + 1, vector<int>(m, 0));
+	//vector<vector<int> > usedForWidth(W0 - minW.getWidth() + 1, vector<int>(m, 0));
+
 	lengths.insert(0);
 	widths.insert(0);
 
@@ -165,10 +168,15 @@ void generateNormalPatterns(Piece& stock, vector<Piece>& patterns, set<int>& len
 
 		while (i < m and not found)
 		{
-			if (lengths.find(x - patterns.at(i).getLength()) != lengths.end())
+			int Li = patterns.at(i).getLength();
+
+			if (lengths.find(x - Li) != lengths.end()/* and
+				usedForLength.at(x).at(i) < patterns.at(i).getMaximum()*/)
 			{
 				lengths.insert(x);
 				found = true;
+				//usedForLength.at(x) = usedForLength.at(x - Li);
+				//usedForLength.at(x).at(i) = usedForWidth.at(x - Li) + 1;
 			}
 
 			++i;
@@ -182,10 +190,15 @@ void generateNormalPatterns(Piece& stock, vector<Piece>& patterns, set<int>& len
 
 		while (i < m and not found)
 		{
-			if (widths.find(x - patterns.at(i).getWidth()) != widths.end())
+			int Wi = patterns.at(i).getWidth();
+
+			if (widths.find(x - Wi) != widths.end()/* and
+				usedForWidth.at(x).at(i) < patterns.at(i).getMaximum()*/)
 			{
 				widths.insert(x);
 				found = true;
+				//usedForWidth.at(x) = usedForWidth.at(x - Wi);
+				//usedForWidth.at(x).at(i) = usedForWidth.at(x - Wi) + 1;
 			}
 
 			++i;
@@ -193,13 +206,13 @@ void generateNormalPatterns(Piece& stock, vector<Piece>& patterns, set<int>& len
 	}
 }
 
-void generateLP(Piece& stock, vector<Piece>& patterns, set<int>& lengths, set<int>& widths)
+void generateLP(Piece& stock, vector<Piece>& patterns, set<int>& lengths, set<int>& widths, string filename)
 {
 	int m = patterns.size();
 	int L = stock.getLength();
 	int W = stock.getWidth();
 
-	ofstream output("Stock_LP.lp");
+	ofstream output(filename + "_LP.lp");
 
 	output << "Maximize" << endl;
 
@@ -209,7 +222,7 @@ void generateLP(Piece& stock, vector<Piece>& patterns, set<int>& lengths, set<in
 		{
 			for (set<int>::iterator q = widths.begin(); q != widths.end(); ++q)
 			{
-				output << " + " << patterns.at(i).getValue() << " x" << i << "_" << *p << "_" << *q;
+				output << (0 == i and lengths.begin() == p and widths.begin() == q? "" : " + ") << patterns.at(i).getValue() << " x" << i << "_" << *p << "_" << *q;
 			}
 
 			output << endl;
@@ -224,6 +237,10 @@ void generateLP(Piece& stock, vector<Piece>& patterns, set<int>& lengths, set<in
 	{
 		for (set<int>::iterator s = widths.begin(); s != widths.end(); ++s)
 		{
+			output << "cut" << *r << *s << ": ";
+
+			bool first = true;
+
 			for (int i = 0; i < m; ++i)
 			{
 				for (set<int>::iterator p = lengths.begin(); p != lengths.end(); ++p)
@@ -232,37 +249,66 @@ void generateLP(Piece& stock, vector<Piece>& patterns, set<int>& lengths, set<in
 					{
 						if (0 < patterns.at(i).getCutPoints(*p, *q, L, W).at(*r).at(*s))
 						{
-							output << " + x" << i << "_" << *p << "_" << *q;
+							if (first)
+							{
+								output << " x" << i << "_" << *p << "_" << *q;
+								first = false;
+							}
+							else
+							{
+								output << " + x" << i << "_" << *p << "_" << *q;
+							}
 						}
 					}
 				}
+				output << endl;
 			}
 
-			output << " <= 1" << endl;;
+			output << " <= 1" << endl;
 		}
 	}
 
 	for (int i = 0; i < m; ++i)
 	{
-		output << endl;
+		output << endl << "min" << i << ": ";
+
+		bool first = true;
 
 		for (set<int>::iterator p = lengths.begin(); p != lengths.end(); ++p)
 		{
 			for (set<int>::iterator q = widths.begin(); q != widths.end(); ++q)
 			{
-				output << " + x" << i << "_" << *p << "_" << *q;
+				if (first)
+				{
+					output << " x" << i << "_" << *p << "_" << *q;
+					first = false;
+				}
+				else
+				{
+					output << " + x" << i << "_" << *p << "_" << *q;
+				}
 			}
 
 			output << endl;
 		}
 
-		output << " >= " << patterns.at(i).getMinimum() << endl << endl;
+		output << " >= " << patterns.at(i).getMinimum() << endl << endl << "max" << i << ": ";
+
+		first = true;
 
 		for (set<int>::iterator p = lengths.begin(); p != lengths.end(); ++p)
 		{
 			for (set<int>::iterator q = widths.begin(); q != widths.end(); ++q)
 			{
-				output << " + x" << i << "_" << *p << "_" << *q;
+				if (first)
+				{
+					output << " x" << i << "_" << *p << "_" << *q;
+					first = false;
+				}
+				else
+				{
+					output << " + x" << i << "_" << *p << "_" << *q;
+				}
 			}
 
 			output << endl;
