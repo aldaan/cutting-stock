@@ -62,13 +62,15 @@ void writeOutput(Piece& stock, vector<Piece>& patterns, string filename)
 {
 	ofstream output(filename + "_modified.txt");
 
+	output << stock.getWidth() << " " << stock.getLength() << endl;
+
 	for (unsigned int i = 0; i < patterns.size(); ++i)
 	{
 		output << patterns.at(i).getWidth() << " ";
 		output << patterns.at(i).getLength() << " ";
 		output << patterns.at(i).getValue() << " ";
 		output << patterns.at(i).getMinimum() << " ";
-		output << patterns.at(i).getMaximum() << "\n";
+		output << patterns.at(i).getMaximum() << endl;
 	}
 
 	output.close();
@@ -155,9 +157,6 @@ void generateNormalPatterns(Piece& stock, vector<Piece>& patterns, set<int>& len
 	Piece minL = *min_element(patterns.begin(), patterns.end(), compareLength);
 	Piece minW = *min_element(patterns.begin(), patterns.end(), compareWidth);
 
-	//vector<vector<int> > usedForLength(L0 - minL.getLength() + 1, vector<int>(m, 0));
-	//vector<vector<int> > usedForWidth(W0 - minW.getWidth() + 1, vector<int>(m, 0));
-
 	lengths.insert(0);
 	widths.insert(0);
 
@@ -170,13 +169,10 @@ void generateNormalPatterns(Piece& stock, vector<Piece>& patterns, set<int>& len
 		{
 			int Li = patterns.at(i).getLength();
 
-			if (lengths.find(x - Li) != lengths.end()/* and
-				usedForLength.at(x).at(i) < patterns.at(i).getMaximum()*/)
+			if (lengths.find(x - Li) != lengths.end())
 			{
 				lengths.insert(x);
 				found = true;
-				//usedForLength.at(x) = usedForLength.at(x - Li);
-				//usedForLength.at(x).at(i) = usedForWidth.at(x - Li) + 1;
 			}
 
 			++i;
@@ -192,13 +188,10 @@ void generateNormalPatterns(Piece& stock, vector<Piece>& patterns, set<int>& len
 		{
 			int Wi = patterns.at(i).getWidth();
 
-			if (widths.find(x - Wi) != widths.end()/* and
-				usedForWidth.at(x).at(i) < patterns.at(i).getMaximum()*/)
+			if (widths.find(x - Wi) != widths.end())
 			{
 				widths.insert(x);
 				found = true;
-				//usedForWidth.at(x) = usedForWidth.at(x - Wi);
-				//usedForWidth.at(x).at(i) = usedForWidth.at(x - Wi) + 1;
 			}
 
 			++i;
@@ -237,27 +230,15 @@ void generateLP(Piece& stock, vector<Piece>& patterns, set<int>& lengths, set<in
 	{
 		for (set<int>::iterator s = widths.begin(); s != widths.end(); ++s)
 		{
-			output << "cut" << *r << *s << ": ";
-
-			bool first = true;
-
 			for (int i = 0; i < m; ++i)
 			{
 				for (set<int>::iterator p = lengths.begin(); p != lengths.end(); ++p)
 				{
 					for (set<int>::iterator q = widths.begin(); q != widths.end(); ++q)
 					{
-						if (0 < patterns.at(i).getCutPoints(*p, *q, L, W).at(*r).at(*s))
+						if (patterns.at(i).isCutPoint(*r, *s, *p, *q))
 						{
-							if (first)
-							{
-								output << " x" << i << "_" << *p << "_" << *q;
-								first = false;
-							}
-							else
-							{
-								output << " + x" << i << "_" << *p << "_" << *q;
-							}
+							output << " + x" << i << "_" << *p << "_" << *q;
 						}
 					}
 				}
@@ -270,51 +251,46 @@ void generateLP(Piece& stock, vector<Piece>& patterns, set<int>& lengths, set<in
 
 	for (int i = 0; i < m; ++i)
 	{
-		output << endl << "min" << i << ": ";
-
-		bool first = true;
-
 		for (set<int>::iterator p = lengths.begin(); p != lengths.end(); ++p)
 		{
 			for (set<int>::iterator q = widths.begin(); q != widths.end(); ++q)
 			{
-				if (first)
-				{
-					output << " x" << i << "_" << *p << "_" << *q;
-					first = false;
-				}
-				else
-				{
-					output << " + x" << i << "_" << *p << "_" << *q;
-				}
+				
+				output << " + x" << i << "_" << *p << "_" << *q;
 			}
 
 			output << endl;
 		}
 
-		output << " >= " << patterns.at(i).getMinimum() << endl << endl << "max" << i << ": ";
-
-		first = true;
+		output << " >= " << patterns.at(i).getMinimum() << endl << endl;
 
 		for (set<int>::iterator p = lengths.begin(); p != lengths.end(); ++p)
 		{
 			for (set<int>::iterator q = widths.begin(); q != widths.end(); ++q)
 			{
-				if (first)
-				{
-					output << " x" << i << "_" << *p << "_" << *q;
-					first = false;
-				}
-				else
-				{
-					output << " + x" << i << "_" << *p << "_" << *q;
-				}
+				output << " + x" << i << "_" << *p << "_" << *q;
 			}
 
 			output << endl;
 		}
 
 		output << " <= " << patterns.at(i).getMaximum() << endl;
+	}
+
+	output << endl << "Bounds" << endl;
+
+	for (int i = 0; i < m; ++i)
+	{
+		for (set<int>::iterator p = lengths.begin(); p != lengths.end(); ++p)
+		{
+			for (set<int>::iterator q = widths.begin(); q != widths.end(); ++q)
+			{
+				if (*p + patterns.at(i).getLength() > L or *q + patterns.at(i).getWidth() > W)
+				{
+					output << "x" << i << "_" << *p << "_" << *q << " = 0" << endl;
+				}
+			}
+		}
 	}
 
 	output << endl << "Binaries" << endl;

@@ -4,3 +4,5 @@
 cgcut2_modified.txt
 Cutting_stock
 *.d
+*.txt~
+*_modified.txt

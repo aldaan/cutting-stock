@@ -16,22 +16,9 @@ Piece::Piece(int width, int length, int value, int minimum, int maximum)
 	this->maximum = maximum;
 }
 
-vector<vector<int> > Piece::getCutPoints(int p, int q, int L, int W) const
+bool Piece::isCutPoint(int r, int s, int p, int q) const
 {
-	vector<vector<int> > points(L, vector<int>(W, 0));
-
-	for (int i = p; i < p + length; ++i)
-	{
-		for (int j = q; j < q + width; ++j)
-		{
-			if (i < L and j < W)
-			{
-				points.at(i).at(j) = 1;
-			}
-		}
-	}
-
-	return points;
+	return p <= r and r < p + length and q <= s and s < q + width;
 }
 
 void Piece::setWidth(int width)

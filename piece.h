@@ -9,7 +9,7 @@ class Piece
 	public:
 		Piece();
 		Piece(int width, int length, int value, int minimum, int maximum);
-		std::vector<std::vector<int> > getCutPoints(int r, int s, int L, int W) const;
+		bool isCutPoint(int r, int s, int p, int q) const;
 		void setWidth(int width);
 		void setLength(int length);
 		int getWidth() const;
